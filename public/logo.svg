@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Family Finance">
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+  <!-- roof + house -->
+  <path d="M24 4 6 17v3h4v22h28V20h4v-3L24 4z" fill="#16A34A"/>
+  <path d="M24 8.5 10.5 18.5V40h27V18.5L24 8.5z" fill="#0F7C3F"/>
+  <!-- protective swoosh -->
+  <path d="M8 40c0-9 7-16 16-16s16 7 16 16" fill="none" stroke="#0057B8" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- coin -->
+  <circle cx="24" cy="30" r="8.5" fill="url(#c)"/>
+  <circle cx="24" cy="30" r="8.5" fill="none" stroke="#B45309" stroke-width="1"/>
+  <text x="24" y="34.5" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif"
+        font-size="11" font-weight="800" fill="#7C2D12">৳</text>
+</svg>

@@ -1,0 +1,26 @@
+{
+  "name": "Family Finance — Smarter Finances, Happier Families",
+  "short_name": "Family Finance",
+  "description": "Manage your family income, expenses, savings and debt. Built for Bangladesh.",
+  "id": "/dashboard",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#00542F",
+  "theme_color": "#006B3C",
+  "lang": "en",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Quick Expense", "url": "/dashboard?quick=expense", "short_name": "Expense" },
+    { "name": "Add Income", "url": "/transactions?add=income", "short_name": "Income" },
+    { "name": "Transfer", "url": "/accounts/transfer", "short_name": "Transfer" }
+  ]
+}

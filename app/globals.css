@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Family Finance brand ─────────────────────────────────────────────
+       Deep Green #006B3C · Green #16A34A · Blue #0057B8 · Gold #FBBF24 · Orange #F97316 */
+    --background: 150 30% 98%;
+    --foreground: 158 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 158 40% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 158 40% 12%;
+
+    --primary: 154 100% 21%;          /* Deep Green #006B3C */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 30% 95%;
+    --secondary-foreground: 158 40% 15%;
+    --muted: 150 24% 95%;
+    --muted-foreground: 155 12% 38%;
+    --accent: 145 55% 93%;
+    --accent-foreground: 154 80% 18%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 20% 88%;
+    --input: 150 18% 85%;
+    --ring: 142 72% 34%;             /* Green #16A34A */
+
+    --income: 142 72% 34%;           /* Green #16A34A */
+    --expense: 0 72% 50%;
+
+    --brand-deep: 154 100% 21%;      /* #006B3C */
+    --brand-green: 142 72% 34%;      /* #16A34A */
+    --brand-blue: 211 100% 36%;      /* #0057B8 */
+    --brand-gold: 45 96% 56%;        /* #FBBF24 */
+    --brand-orange: 24 95% 53%;      /* #F97316 */
+
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    --background: 160 32% 7%;
+    --foreground: 150 25% 94%;
+    --card: 160 26% 11%;
+    --card-foreground: 150 25% 94%;
+    --popover: 160 26% 12%;
+    --popover-foreground: 150 25% 94%;
+
+    --primary: 142 62% 44%;          /* brightened green for dark surfaces */
+    --primary-foreground: 160 40% 7%;
+    --secondary: 160 22% 17%;
+    --secondary-foreground: 150 25% 94%;
+    --muted: 160 20% 15%;
+    --muted-foreground: 150 12% 62%;
+    --accent: 155 32% 19%;
+    --accent-foreground: 142 62% 78%;
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 160 20% 19%;
+    --input: 160 20% 23%;
+    --ring: 142 62% 46%;
+
+    --income: 142 58% 52%;
+    --expense: 0 68% 62%;
+
+    --brand-deep: 154 60% 30%;
+    --brand-green: 142 58% 48%;
+    --brand-blue: 211 70% 55%;
+    --brand-gold: 45 90% 60%;
+    --brand-orange: 24 88% 58%;
+  }
+
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply text-[15px];
+  }
+
+  h1 { @apply tracking-tight; }
+}
+
+@layer utilities {
+  .surface-pop {
+    @apply border bg-popover text-popover-foreground shadow-lg;
+  }
+  /* Family Finance green header/banner gradient */
+  .brand-gradient {
+    background:
+      radial-gradient(1200px 400px at 15% -10%, hsl(142 72% 34% / 0.35), transparent 60%),
+      linear-gradient(135deg, hsl(154 100% 14%), hsl(154 100% 21%) 55%, hsl(142 72% 26%));
+  }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+[data-radix-popper-content-wrapper] > * {
+  animation: pop-in 120ms ease-out;
+}

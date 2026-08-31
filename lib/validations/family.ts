@@ -7,7 +7,13 @@ export const createFamilySchema = z.object({
 
 export const inviteMemberSchema = z.object({
   displayName: z.string().min(1, 'Name is required'),
-  email: z.string().email('Enter a valid email'),
+  // Optional — the invite works purely off the shareable link. If given, we
+  // also try to email it.
+  email: z
+    .string()
+    .email('Enter a valid email')
+    .optional()
+    .or(z.literal('')),
   relationship: z.string().optional(),
   role: z.enum(['owner', 'admin', 'member', 'viewer']).default('member'),
 });

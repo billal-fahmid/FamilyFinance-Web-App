@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Shield, Link2, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, Link2, Check, MessageCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,14 +23,21 @@ export default function FamilyPage() {
   const [editing, setEditing] = useState<FamilyMember | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const inviteUrlFor = (m: FamilyMember) => `${window.location.origin}/join/${m.invite_token}`;
+
   const copyInvite = async (m: FamilyMember) => {
     if (!m.invite_token) return;
-    const url = `${window.location.origin}/join/${m.invite_token}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(inviteUrlFor(m));
       setCopiedId(m.id);
       setTimeout(() => setCopiedId(null), 1500);
     } catch {}
+  };
+
+  const whatsappInvite = (m: FamilyMember) => {
+    if (!m.invite_token) return;
+    const text = `Join our family on Family Finance: ${inviteUrlFor(m)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const isAdmin = currentRole === 'owner' || currentRole === 'admin';
@@ -109,13 +116,18 @@ export default function FamilyPage() {
                 )}
               </div>
               {isAdmin && m.status === 'invited' && m.invite_token && (
-                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => copyInvite(m)}>
-                  {copiedId === m.id ? (
-                    <><Check className="mr-1 h-3.5 w-3.5" /> Link copied</>
-                  ) : (
-                    <><Link2 className="mr-1 h-3.5 w-3.5" /> Copy invite link</>
-                  )}
-                </Button>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => copyInvite(m)}>
+                    {copiedId === m.id ? (
+                      <><Check className="mr-1 h-3.5 w-3.5" /> Copied</>
+                    ) : (
+                      <><Link2 className="mr-1 h-3.5 w-3.5" /> Copy link</>
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => whatsappInvite(m)}>
+                    <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

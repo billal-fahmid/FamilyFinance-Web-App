@@ -1,21 +1,27 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Download } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Download, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TransactionList, type ListRow } from '@/components/transaction-list';
 import { IncomeFormDialog } from '@/components/income/income-form-dialog';
 import { ExpenseFormDialog } from '@/components/expense/expense-form-dialog';
+import { BudgetFormDialog } from '@/components/budget/budget-form-dialog';
 import { exportCSV, exportXLSX, exportPDF, type ExportRow } from '@/lib/export';
-import { toLocalISODate } from '@/lib/utils';
+import { toLocalISODate, formatBDT, cn } from '@/lib/utils';
 import { monthStartISO } from '@/lib/finance';
-import type { Category, IncomeEntry, ExpenseEntry } from '@/types/database';
+import type { Category, IncomeEntry, ExpenseEntry, Budget, BudgetCategory } from '@/types/database';
+
+type BudgetWithCats = Budget & { budget_categories: BudgetCategory[] };
 
 export default function TransactionsPage() {
   const { currentFamily } = useFamily();
@@ -28,6 +34,9 @@ export default function TransactionsPage() {
   const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(null);
   const [loadError, setLoadError] = useState<'needs-migration' | 'load-failed' | null>(null);
   const [monthOffset, setMonthOffset] = useState(0);
+  const [budget, setBudget] = useState<BudgetWithCats | null>(null);
+  const [budgetSpent, setBudgetSpent] = useState(0);
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
 
   const month = useMemo(() => {
     const d = new Date();
@@ -68,10 +77,17 @@ export default function TransactionsPage() {
     } else if (income.error || expenses.error) {
       setLoadError('load-failed');
     }
-    const { data: cats } = await supabase.from('categories').select('*');
+    const [{ data: cats }, { data: budgetRow }, { data: spend }] = await Promise.all([
+      supabase.from('categories').select('*'),
+      supabase.from('budgets').select('*, budget_categories(*)').eq('family_id', currentFamily.id).eq('month', month).maybeSingle(),
+      supabase.from('v_unified_spend').select('amount').eq('family_id', currentFamily.id)
+        .gte('occurred_on', month).lt('occurred_on', nextMonthISO),
+    ]);
     setIncomeRows((income.data as IncomeEntry[]) ?? []);
     setExpenseRows((expenses.data as ExpenseEntry[]) ?? []);
     setCategories((cats as Category[]) ?? []);
+    setBudget((budgetRow as BudgetWithCats) ?? null);
+    setBudgetSpent(((spend as { amount: number }[]) ?? []).reduce((s, r) => s + Number(r.amount), 0));
   }, [currentFamily, month]);
 
   useEffect(() => {
@@ -79,6 +95,11 @@ export default function TransactionsPage() {
   }, [load]);
 
   const labelFor = (key: string) => categories.find((c) => c.key === key)?.label ?? key;
+
+  const budgetCatsSum = (budget?.budget_categories ?? []).reduce((s, c) => s + Number(c.limit_amount), 0);
+  const budgetLimit = budget?.total_limit ?? budgetCatsSum;
+  const budgetPct = budgetLimit > 0 ? (budgetSpent / budgetLimit) * 100 : 0;
+  const budgetRemaining = budgetLimit - budgetSpent;
 
   const incomeListRows: ListRow[] = incomeRows.map((r) => ({
     id: r.id,
@@ -174,6 +195,54 @@ export default function TransactionsPage() {
         </div>
 
         <TabsContent value="expenses">
+          <Card className="mb-3">
+            <CardContent className="pt-6">
+              {!budget ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">No budget set for {monthLabel}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Create one to track spending against a limit and get overspend warnings.
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => setBudgetDialogOpen(true)}>
+                    <Plus className="mr-1 h-4 w-4" /> Create Budget
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{monthLabel} Budget</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">
+                        {formatBDT(budgetSpent)} of {formatBDT(budgetLimit)}
+                      </span>
+                      <Button size="sm" variant="outline" onClick={() => setBudgetDialogOpen(true)}>Edit</Button>
+                      <Link href="/budget"><Button size="sm" variant="ghost">Details →</Button></Link>
+                    </div>
+                  </div>
+                  <Progress
+                    value={budgetPct}
+                    tone={budgetPct >= 100 ? 'danger' : budgetPct >= 80 ? 'warn' : 'primary'}
+                  />
+                  {budgetLimit > 0 && budgetPct >= 80 && (
+                    <div
+                      className={cn(
+                        'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
+                        budgetPct >= 100 ? 'bg-destructive/10 text-destructive' : 'bg-amber-500/10 text-amber-700'
+                      )}
+                    >
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      {budgetPct >= 100
+                        ? `You've gone ${formatBDT(Math.abs(budgetRemaining))} over your ${monthLabel} budget.`
+                        : `${budgetPct.toFixed(0)}% of your ${monthLabel} budget used — ${formatBDT(budgetRemaining)} left.`}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="mb-3 flex justify-end gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -235,6 +304,13 @@ export default function TransactionsPage() {
         onOpenChange={setExpenseDialogOpen}
         onSaved={load}
         editing={editingExpense}
+      />
+      <BudgetFormDialog
+        open={budgetDialogOpen}
+        onOpenChange={setBudgetDialogOpen}
+        onSaved={load}
+        editing={budget}
+        defaultMonth={month}
       />
     </div>
   );

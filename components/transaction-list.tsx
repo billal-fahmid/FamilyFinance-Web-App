@@ -21,9 +21,10 @@ interface Props {
   tone: 'income' | 'expense';
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onRowClick?: (id: string) => void;
 }
 
-export function TransactionList({ rows, categoryOptions, tone, onEdit, onDelete }: Props) {
+export function TransactionList({ rows, categoryOptions, tone, onEdit, onDelete, onRowClick }: Props) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -81,7 +82,11 @@ export function TransactionList({ rows, categoryOptions, tone, onEdit, onDelete 
               </tr>
             )}
             {filtered.map((r) => (
-              <tr key={r.id} className="hover:bg-accent/40">
+              <tr
+                key={r.id}
+                className={cn('hover:bg-accent/40', onRowClick && 'cursor-pointer')}
+                onClick={() => onRowClick?.(r.id)}
+              >
                 <td className="px-4 py-2 whitespace-nowrap">{formatDate(r.occurred_on)}</td>
                 <td className="px-4 py-2">{r.categoryLabel}</td>
                 <td className="px-4 py-2 text-muted-foreground">{r.secondary || '—'}</td>
@@ -96,10 +101,20 @@ export function TransactionList({ rows, categoryOptions, tone, onEdit, onDelete 
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(r.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => { e.stopPropagation(); onEdit(r.id); }}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(r.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => { e.stopPropagation(); onDelete(r.id); }}
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>

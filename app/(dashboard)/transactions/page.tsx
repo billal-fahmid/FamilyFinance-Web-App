@@ -16,10 +16,13 @@ import { TransactionList, type ListRow } from '@/components/transaction-list';
 import { IncomeFormDialog } from '@/components/income/income-form-dialog';
 import { ExpenseFormDialog } from '@/components/expense/expense-form-dialog';
 import { BudgetFormDialog } from '@/components/budget/budget-form-dialog';
+import { TransactionDetailsDialog } from '@/components/transaction-details-dialog';
 import { exportCSV, exportXLSX, exportPDF, type ExportRow } from '@/lib/export';
 import { toLocalISODate, formatBDT, cn } from '@/lib/utils';
 import { monthStartISO } from '@/lib/finance';
-import type { Category, IncomeEntry, ExpenseEntry, Budget, BudgetCategory } from '@/types/database';
+import type {
+  Category, IncomeEntry, ExpenseEntry, Budget, BudgetCategory, Account, FamilyMember,
+} from '@/types/database';
 
 type BudgetWithCats = Budget & { budget_categories: BudgetCategory[] };
 
@@ -28,6 +31,8 @@ export default function TransactionsPage() {
   const [incomeRows, setIncomeRows] = useState<IncomeEntry[]>([]);
   const [expenseRows, setExpenseRows] = useState<ExpenseEntry[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [members, setMembers] = useState<FamilyMember[]>([]);
   const [incomeDialogOpen, setIncomeDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
@@ -37,6 +42,8 @@ export default function TransactionsPage() {
   const [budget, setBudget] = useState<BudgetWithCats | null>(null);
   const [budgetSpent, setBudgetSpent] = useState(0);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
+  const [viewing, setViewing] = useState<{ kind: 'expense' | 'income'; entry: ExpenseEntry | IncomeEntry } | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const month = useMemo(() => {
     const d = new Date();
@@ -77,17 +84,21 @@ export default function TransactionsPage() {
     } else if (income.error || expenses.error) {
       setLoadError('load-failed');
     }
-    const [{ data: cats }, { data: budgetRow }, { data: spend }] = await Promise.all([
+    const [{ data: cats }, { data: budgetRow }, { data: spend }, { data: accts }, { data: fam }] = await Promise.all([
       supabase.from('categories').select('*'),
       supabase.from('budgets').select('*, budget_categories(*)').eq('family_id', currentFamily.id).eq('month', month).maybeSingle(),
       supabase.from('v_unified_spend').select('amount').eq('family_id', currentFamily.id)
         .gte('occurred_on', month).lt('occurred_on', nextMonthISO),
+      supabase.from('accounts').select('*').eq('family_id', currentFamily.id),
+      supabase.from('family_members').select('*').eq('family_id', currentFamily.id),
     ]);
     setIncomeRows((income.data as IncomeEntry[]) ?? []);
     setExpenseRows((expenses.data as ExpenseEntry[]) ?? []);
     setCategories((cats as Category[]) ?? []);
     setBudget((budgetRow as BudgetWithCats) ?? null);
     setBudgetSpent(((spend as { amount: number }[]) ?? []).reduce((s, r) => s + Number(r.amount), 0));
+    setAccounts((accts as Account[]) ?? []);
+    setMembers((fam as FamilyMember[]) ?? []);
   }, [currentFamily, month]);
 
   useEffect(() => {
@@ -95,6 +106,22 @@ export default function TransactionsPage() {
   }, [load]);
 
   const labelFor = (key: string) => categories.find((c) => c.key === key)?.label ?? key;
+  const accountName = (id: string) => accounts.find((a) => a.id === id)?.name;
+  const personName = (id: string | null) => (id ? members.find((m) => m.id === id)?.display_name : undefined);
+
+  const viewExpense = (id: string) => {
+    const entry = expenseRows.find((r) => r.id === id);
+    if (!entry) return;
+    setViewing({ kind: 'expense', entry });
+    setDetailsOpen(true);
+  };
+
+  const viewIncome = (id: string) => {
+    const entry = incomeRows.find((r) => r.id === id);
+    if (!entry) return;
+    setViewing({ kind: 'income', entry });
+    setDetailsOpen(true);
+  };
 
   const budgetCatsSum = (budget?.budget_categories ?? []).reduce((s, c) => s + Number(c.limit_amount), 0);
   const budgetLimit = budget?.total_limit ?? budgetCatsSum;
@@ -262,6 +289,7 @@ export default function TransactionsPage() {
             rows={expenseListRows}
             categoryOptions={categories.filter((c) => c.type === 'expense')}
             tone="expense"
+            onRowClick={viewExpense}
             onEdit={(id) => { setEditingExpense(expenseRows.find((r) => r.id === id) ?? null); setExpenseDialogOpen(true); }}
             onDelete={deleteExpense}
           />
@@ -287,6 +315,7 @@ export default function TransactionsPage() {
             rows={incomeListRows}
             categoryOptions={categories.filter((c) => c.type === 'income')}
             tone="income"
+            onRowClick={viewIncome}
             onEdit={(id) => { setEditingIncome(incomeRows.find((r) => r.id === id) ?? null); setIncomeDialogOpen(true); }}
             onDelete={deleteIncome}
           />
@@ -311,6 +340,32 @@ export default function TransactionsPage() {
         onSaved={load}
         editing={budget}
         defaultMonth={month}
+      />
+      <TransactionDetailsDialog
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        kind={viewing?.kind ?? 'expense'}
+        entry={viewing?.entry ?? null}
+        categoryLabel={viewing ? labelFor(viewing.entry.category_key) : ''}
+        accountName={viewing ? accountName(viewing.entry.account_id) : undefined}
+        personName={viewing ? personName(viewing.entry.person_id) : undefined}
+        onEdit={() => {
+          if (!viewing) return;
+          setDetailsOpen(false);
+          if (viewing.kind === 'expense') {
+            setEditingExpense(viewing.entry as ExpenseEntry);
+            setExpenseDialogOpen(true);
+          } else {
+            setEditingIncome(viewing.entry as IncomeEntry);
+            setIncomeDialogOpen(true);
+          }
+        }}
+        onDelete={() => {
+          if (!viewing) return;
+          setDetailsOpen(false);
+          if (viewing.kind === 'expense') deleteExpense(viewing.entry.id);
+          else deleteIncome(viewing.entry.id);
+        }}
       />
     </div>
   );

@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { StatCard } from '@/components/dashboard/stat-card';
-import { IncomeExpenseChart, type MonthlyPoint } from '@/components/dashboard/income-expense-chart';
-import { CategoryChart, type CategorySlice } from '@/components/dashboard/category-chart';
+import type { MonthlyPoint } from '@/components/dashboard/income-expense-chart';
+import type { CategorySlice } from '@/components/dashboard/category-chart';
 import { RecentTransactions, type TxnRow } from '@/components/dashboard/recent-transactions';
 import Link from 'next/link';
 import { Lightbulb } from 'lucide-react';
@@ -14,6 +15,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatBDT, cn, toLocalISODate } from '@/lib/utils';
 import { daysUntil, monthStartISO as currentMonthStart } from '@/lib/finance';
 import { buildInsights, type Insight } from '@/lib/insights';
+
+// recharts is a large dependency (~100kb+) — load it only in the browser and
+// only once this data is ready, instead of blocking the whole dashboard chunk.
+const ChartSkeleton = ({ title }: { title: string }) => (
+  <Card>
+    <CardHeader><CardTitle className="text-foreground">{title}</CardTitle></CardHeader>
+    <CardContent className="h-72">
+      <div className="h-full w-full animate-pulse rounded-md bg-muted" />
+    </CardContent>
+  </Card>
+);
+const IncomeExpenseChart = dynamic(
+  () => import('@/components/dashboard/income-expense-chart').then((m) => m.IncomeExpenseChart),
+  { ssr: false, loading: () => <ChartSkeleton title="Income vs Expense" /> }
+);
+const CategoryChart = dynamic(
+  () => import('@/components/dashboard/category-chart').then((m) => m.CategoryChart),
+  { ssr: false, loading: () => <ChartSkeleton title="Spending by Category" /> }
+);
 
 interface ObligationSummary {
   ccOutstanding: number;

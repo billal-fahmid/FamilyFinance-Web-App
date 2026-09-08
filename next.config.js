@@ -60,6 +60,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: { remotePatterns: [{ protocol: 'https', hostname: '**.supabase.co' }] },
+  // Only pull in the recharts submodules a page actually imports, instead of
+  // bundling the whole library — recharts has no per-page tree-shaking win
+  // without this since its package entrypoint re-exports everything.
+  experimental: { optimizePackageImports: ['recharts'] },
   async headers() {
     return [
       {

@@ -5,69 +5,72 @@
 @layer base {
   :root {
     /* ── Family Finance brand ─────────────────────────────────────────────
-       Deep Green #006B3C · Green #16A34A · Blue #0057B8 · Gold #FBBF24 · Orange #F97316 */
-    --background: 150 30% 98%;
-    --foreground: 158 40% 12%;
+       Sky Blue #0EA5E9 · Black #0B1220 · Yellow #FACC15 · White
+       Blue = primary actions/links/focus. Black = text & nav chrome.
+       Yellow = accents/highlights, used sparingly. White = surfaces.
+       Income/expense stay green/red — the universal finance convention. */
+    --background: 210 25% 98%;
+    --foreground: 222 47% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 158 40% 12%;
+    --card-foreground: 222 47% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 158 40% 12%;
+    --popover-foreground: 222 47% 8%;
 
-    --primary: 154 100% 21%;          /* Deep Green #006B3C */
+    --primary: 199 89% 45%;           /* Sky Blue #0EA5E9 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 150 30% 95%;
-    --secondary-foreground: 158 40% 15%;
-    --muted: 150 24% 95%;
-    --muted-foreground: 155 12% 38%;
-    --accent: 145 55% 93%;
-    --accent-foreground: 154 80% 18%;
+    --secondary: 210 25% 95%;
+    --secondary-foreground: 222 30% 15%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 15% 42%;
+    --accent: 199 70% 94%;
+    --accent-foreground: 199 89% 24%;
     --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 150 20% 88%;
-    --input: 150 18% 85%;
-    --ring: 142 72% 34%;             /* Green #16A34A */
+    --border: 210 20% 88%;
+    --input: 210 18% 85%;
+    --ring: 199 89% 45%;             /* Sky Blue focus ring */
 
-    --income: 142 72% 34%;           /* Green #16A34A */
-    --expense: 0 72% 50%;
+    --income: 142 72% 34%;           /* Green — universal "positive" convention */
+    --expense: 0 72% 50%;            /* Red — universal "negative" convention */
 
-    --brand-deep: 154 100% 21%;      /* #006B3C */
-    --brand-green: 142 72% 34%;      /* #16A34A */
-    --brand-blue: 211 100% 36%;      /* #0057B8 */
-    --brand-gold: 45 96% 56%;        /* #FBBF24 */
-    --brand-orange: 24 95% 53%;      /* #F97316 */
+    --brand-deep: 222 47% 8%;        /* Near-black #0B1220 */
+    --brand-green: 142 72% 34%;
+    --brand-blue: 199 89% 45%;       /* Sky Blue #0EA5E9 */
+    --brand-gold: 48 96% 53%;        /* Yellow #FACC15 */
+    --brand-orange: 24 95% 53%;
 
     --radius: 0.6rem;
   }
 
   .dark {
-    --background: 160 32% 7%;
-    --foreground: 150 25% 94%;
-    --card: 160 26% 11%;
-    --card-foreground: 150 25% 94%;
-    --popover: 160 26% 12%;
-    --popover-foreground: 150 25% 94%;
+    --background: 222 47% 6%;
+    --foreground: 210 20% 96%;
+    --card: 222 40% 9%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 210 20% 96%;
 
-    --primary: 142 62% 44%;          /* brightened green for dark surfaces */
-    --primary-foreground: 160 40% 7%;
-    --secondary: 160 22% 17%;
-    --secondary-foreground: 150 25% 94%;
-    --muted: 160 20% 15%;
-    --muted-foreground: 150 12% 62%;
-    --accent: 155 32% 19%;
-    --accent-foreground: 142 62% 78%;
+    --primary: 199 89% 58%;          /* brightened sky blue for dark surfaces */
+    --primary-foreground: 222 47% 8%;
+    --secondary: 222 24% 15%;
+    --secondary-foreground: 210 20% 94%;
+    --muted: 222 20% 14%;
+    --muted-foreground: 215 12% 65%;
+    --accent: 199 40% 18%;
+    --accent-foreground: 199 85% 78%;
     --destructive: 0 62% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 160 20% 19%;
-    --input: 160 20% 23%;
-    --ring: 142 62% 46%;
+    --border: 222 20% 18%;
+    --input: 222 20% 22%;
+    --ring: 199 89% 55%;
 
     --income: 142 58% 52%;
     --expense: 0 68% 62%;
 
-    --brand-deep: 154 60% 30%;
+    --brand-deep: 222 47% 4%;
     --brand-green: 142 58% 48%;
-    --brand-blue: 211 70% 55%;
-    --brand-gold: 45 90% 60%;
+    --brand-blue: 199 85% 60%;
+    --brand-gold: 48 90% 60%;
     --brand-orange: 24 88% 58%;
   }
 
@@ -92,11 +95,14 @@
   .surface-pop {
     @apply border bg-popover text-popover-foreground shadow-lg;
   }
-  /* Family Finance green header/banner gradient */
+  /* Family Finance header/banner gradient — near-black chrome with a sky-blue
+     glow and a touch of yellow, so the sidebar/auth hero carries all three
+     brand accents without competing with the white content area. */
   .brand-gradient {
     background:
-      radial-gradient(1200px 400px at 15% -10%, hsl(142 72% 34% / 0.35), transparent 60%),
-      linear-gradient(135deg, hsl(154 100% 14%), hsl(154 100% 21%) 55%, hsl(142 72% 26%));
+      radial-gradient(1200px 400px at 15% -10%, hsl(199 89% 45% / 0.35), transparent 60%),
+      radial-gradient(800px 260px at 100% 115%, hsl(48 96% 53% / 0.14), transparent 60%),
+      linear-gradient(135deg, hsl(222 47% 5%), hsl(222 40% 9%) 55%, hsl(222 35% 13%));
   }
 }
 

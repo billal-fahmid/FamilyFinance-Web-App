@@ -1,25 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#00552F"/>
-      <stop offset="1" stop-color="#006B3C"/>
+      <stop offset="0" stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#0C4A6E"/>
     </linearGradient>
     <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FBBF24"/>
-      <stop offset="1" stop-color="#F97316"/>
+      <stop offset="0" stop-color="#FDE047"/>
+      <stop offset="1" stop-color="#FACC15"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <!-- coin stack -->
-  <ellipse cx="256" cy="356" rx="120" ry="34" fill="#B45309"/>
-  <ellipse cx="256" cy="330" rx="120" ry="34" fill="#F59E0B"/>
-  <ellipse cx="256" cy="300" rx="120" ry="34" fill="#EA8C0C"/>
+  <ellipse cx="256" cy="356" rx="120" ry="34" fill="#A16207"/>
+  <ellipse cx="256" cy="330" rx="120" ry="34" fill="#CA8A04"/>
+  <ellipse cx="256" cy="300" rx="120" ry="34" fill="#EAB308"/>
   <ellipse cx="256" cy="268" rx="120" ry="36" fill="url(#coin)"/>
-  <ellipse cx="256" cy="268" rx="92" ry="26" fill="#FDE68A" opacity="0.55"/>
+  <ellipse cx="256" cy="268" rx="92" ry="26" fill="#FEF9C3" opacity="0.55"/>
   <text x="256" y="286" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif"
-        font-size="118" font-weight="800" fill="#7C2D12">৳</text>
-  <!-- leaf -->
-  <path d="M256 210c0-58 44-104 118-118-6 76-52 118-118 118z" fill="#22C55E"/>
-  <path d="M266 200c22-30 52-46 92-52-20 32-52 50-92 52z" fill="#16A34A"/>
-  <path d="M256 210c-6-26-2-52 14-78" stroke="#15803D" stroke-width="10" stroke-linecap="round" fill="none"/>
+        font-size="118" font-weight="800" fill="#0B1220">৳</text>
+  <!-- accent flourish -->
+  <path d="M256 210c0-58 44-104 118-118-6 76-52 118-118 118z" fill="#38BDF8"/>
+  <path d="M266 200c22-30 52-46 92-52-20 32-52 50-92 52z" fill="#0EA5E9"/>
+  <path d="M256 210c-6-26-2-52 14-78" stroke="#0369A1" stroke-width="10" stroke-linecap="round" fill="none"/>
 </svg>

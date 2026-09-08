@@ -1,16 +1,16 @@
 // Family Finance PWA icons — flat raster, no image libraries.
 //   node scripts/gen-icons.mjs
-// Deep-green rounded square + gold coin + green leaf + a hand-drawn ৳ mark.
+// Near-black rounded square + yellow coin + sky-blue flourish + a hand-drawn ৳ mark.
 import { deflateSync } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
-const DEEP = [0, 84, 47];       // #00542F
-const DEEP2 = [0, 107, 60];     // #006B3C
-const GOLD = [251, 191, 36];    // #FBBF24
-const ORANGE = [249, 115, 22];  // #F97316
-const LEAF = [34, 197, 94];     // #22C55E
-const LEAF2 = [22, 163, 74];    // #16A34A
-const MARK = [124, 45, 18];     // #7C2D12
+const DEEP = [11, 18, 32];      // #0B1220
+const DEEP2 = [12, 74, 110];    // #0C4A6E
+const GOLD = [253, 224, 71];    // #FDE047
+const ORANGE = [250, 204, 21];  // #FACC15
+const LEAF = [56, 189, 248];    // #38BDF8
+const LEAF2 = [14, 165, 233];   // #0EA5E9
+const MARK = [11, 18, 32];      // #0B1220
 
 function crc32(buf) {
   let c = ~0;

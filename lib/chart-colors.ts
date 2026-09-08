@@ -1,22 +1,22 @@
 // Family Finance categorical chart palette — brand-forward, colour-blind aware,
 // legible on light and dark. First few colours are the brand core.
 export const CHART_PALETTE = [
-  '#16A34A', // brand green
-  '#0057B8', // brand blue
-  '#F97316', // brand orange
-  '#FBBF24', // brand gold
-  '#006B3C', // deep green
-  '#0EA5E9', // sky
+  '#0EA5E9', // brand sky blue
+  '#FACC15', // brand yellow
+  '#0B1220', // brand near-black
+  '#0369A1', // deep blue
+  '#16A34A', // green (income-adjacent)
   '#8B5CF6', // violet
   '#EC4899', // pink
   '#14B8A6', // teal
+  '#F97316', // orange
   '#64748B', // slate
 ];
 
 export const BRAND = {
-  deep: '#006B3C',
+  deep: '#0B1220',
   green: '#16A34A',
-  blue: '#0057B8',
-  gold: '#FBBF24',
+  blue: '#0EA5E9',
+  gold: '#FACC15',
   orange: '#F97316',
 };

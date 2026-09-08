@@ -36,11 +36,11 @@ export async function POST(request: Request) {
   const subject = `${inviterName} invited you to ${familyName} on Family Finance`;
   const html = `
     <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#0f172a">
-      <h2 style="color:#006B3C;margin:0 0 8px">Family Finance</h2>
+      <h2 style="color:#0284C7;margin:0 0 8px">Family Finance</h2>
       <p>Hi ${escapeHtml(displayName)},</p>
       <p><b>${escapeHtml(inviterName)}</b> invited you to join <b>${escapeHtml(familyName)}</b> on Family Finance — a shared space to track your family's income, expenses and savings.</p>
       <p style="margin:24px 0">
-        <a href="${inviteUrl}" style="background:#006B3C;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">
+        <a href="${inviteUrl}" style="background:#0284C7;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;display:inline-block">
           Accept invitation
         </a>
       </p>

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { todayISO } from '@/lib/utils';
 
 export const incomeSchema = z.object({
   amount: z.coerce.number().positive('Amount must be greater than 0'),
@@ -34,7 +35,7 @@ export const quickExpenseSchema = z.object({
   amount: z.coerce.number().positive('Amount must be greater than 0'),
   categoryKey: z.string().min(1, 'Category is required'),
   accountId: z.string().uuid('Account is required'),
-  occurredOn: z.string().min(1).default(() => new Date().toISOString().slice(0, 10)),
+  occurredOn: z.string().min(1).default(() => todayISO()),
 });
 
 export const accountSchema = z.object({

@@ -9,7 +9,7 @@ import { StatTile } from '@/components/ui/stat-tile';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BudgetFormDialog } from '@/components/budget/budget-form-dialog';
-import { formatBDT } from '@/lib/utils';
+import { formatBDT, toLocalISODate } from '@/lib/utils';
 import { monthStartISO } from '@/lib/finance';
 import type { Budget, BudgetCategory, Category } from '@/types/database';
 
@@ -49,7 +49,7 @@ export default function BudgetPage() {
     const supabase = createClient();
     const nextMonth = new Date(month + 'T00:00:00');
     nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const nextMonthISO = nextMonth.toISOString().slice(0, 10);
+    const nextMonthISO = toLocalISODate(nextMonth);
 
     const [{ data: b }, { data: spend }, { data: cats }] = await Promise.all([
       supabase

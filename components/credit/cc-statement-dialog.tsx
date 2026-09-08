@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { creditCardStatementSchema, type CreditCardStatementInput } from '@/lib/validations/credit';
+import { toLocalISODate } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,12 +61,12 @@ export function CcStatementDialog({ open, onOpenChange, onSaved, card, editing }
     dueDate.setDate(dueDay);
     reset({
       cardId: card.id,
-      periodStart: periodStart.toISOString().slice(0, 10),
-      periodEnd: stmtDate.toISOString().slice(0, 10),
-      statementDate: stmtDate.toISOString().slice(0, 10),
+      periodStart: toLocalISODate(periodStart),
+      periodEnd: toLocalISODate(stmtDate),
+      statementDate: toLocalISODate(stmtDate),
       statementBalance: Number(card.current_outstanding) || 0,
       minimumPayment: Math.round((Number(card.current_outstanding) || 0) * 0.05),
-      dueDate: dueDate.toISOString().slice(0, 10),
+      dueDate: toLocalISODate(dueDate),
       notes: '',
     });
   }, [open, editing, card, reset]);

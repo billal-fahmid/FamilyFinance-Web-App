@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ArrowLeftRight, Wallet, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, Wallet, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
   { label: 'Home', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Transactions', href: '/transactions', icon: ArrowLeftRight },
+  { label: 'Budget', href: '/budget', icon: PiggyBank },
   { label: 'Accounts', href: '/accounts', icon: Wallet },
-  { label: 'Family', href: '/family', icon: Users },
   { label: 'Settings', href: '/settings/profile', icon: Settings },
 ];
 

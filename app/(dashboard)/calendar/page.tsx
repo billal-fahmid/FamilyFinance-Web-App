@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatBDT, cn } from '@/lib/utils';
+import { formatBDT, cn, toLocalISODate } from '@/lib/utils';
 import { nextDayOfMonth } from '@/lib/finance';
 
 type EvKind = 'income' | 'expense' | 'bill' | 'cc' | 'loan' | 'goal';
@@ -38,8 +38,8 @@ export default function CalendarPage() {
 
   const monthStart = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth(), 1), [cursor]);
   const monthEnd = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0), [cursor]);
-  const startISO = monthStart.toISOString().slice(0, 10);
-  const endISO = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1).toISOString().slice(0, 10);
+  const startISO = toLocalISODate(monthStart);
+  const endISO = toLocalISODate(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
 
   const load = useCallback(async () => {
     if (!currentFamily) return;
@@ -66,13 +66,13 @@ export default function CalendarPage() {
     });
     (cards.data ?? []).forEach((r: any) => {
       if (!r.due_day) return;
-      const d = nextDayOfMonth(r.due_day, monthStart).toISOString().slice(0, 10);
+      const d = toLocalISODate(nextDayOfMonth(r.due_day, monthStart));
       if (inMonth(d)) ev.push({ date: d, kind: 'cc', label: `${r.provider} ${r.card_name} due`, amount: Number(r.minimum_payment) || undefined });
     });
     (loans.data ?? []).forEach((r: any) => {
       if (r.is_closed || !r.emi_amount) return;
       const day = Math.min(new Date(r.start_date + 'T00:00:00').getDate(), 28);
-      const d = new Date(cursor.getFullYear(), cursor.getMonth(), day).toISOString().slice(0, 10);
+      const d = toLocalISODate(new Date(cursor.getFullYear(), cursor.getMonth(), day));
       if (inMonth(d)) ev.push({ date: d, kind: 'loan', label: `${r.lender} EMI`, amount: Number(r.emi_amount) });
     });
     (goals.data ?? []).forEach((r: any) => {
@@ -97,10 +97,10 @@ export default function CalendarPage() {
   }, [monthStart, monthEnd, cursor]);
 
   const eventsOn = (d: Date) => {
-    const iso = d.toISOString().slice(0, 10);
+    const iso = toLocalISODate(d);
     return events.filter((e) => e.date === iso);
   };
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayISO = toLocalISODate(new Date());
 
   return (
     <div className="space-y-6">
@@ -142,7 +142,7 @@ export default function CalendarPage() {
                   <div key={wi} className="grid grid-cols-7 gap-1">
                     {week.map((day, di) => {
                       if (!day) return <div key={di} className="min-h-[92px] rounded-md bg-muted/30" />;
-                      const iso = day.toISOString().slice(0, 10);
+                      const iso = toLocalISODate(day);
                       const evs = eventsOn(day);
                       return (
                         <div

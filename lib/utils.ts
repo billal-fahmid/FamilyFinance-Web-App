@@ -61,8 +61,23 @@ export function formatDate(date: string | Date, opts?: Intl.DateTimeFormatOption
   }).format(d);
 }
 
+/**
+ * Format a Date as YYYY-MM-DD using its local calendar fields.
+ * `Date#toISOString()` converts to UTC first, which silently shifts the
+ * date back a day for any timezone ahead of UTC (e.g. Asia/Dhaka, UTC+6) —
+ * always for a local-midnight Date, and for `new Date()` itself whenever
+ * it's before the UTC offset's hour in local time. Use this instead
+ * anywhere a Date needs to become the "today" or "this day" ISO string.
+ */
+export function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 /** Client-generated UUID — used so offline-queued inserts replay idempotently. */

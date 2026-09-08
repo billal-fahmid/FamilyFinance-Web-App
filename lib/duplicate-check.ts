@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { toLocalISODate } from '@/lib/utils';
 
 // Client-side "does this look like a duplicate?" check. Runs before an insert;
 // never deletes or blocks — only lets the UI warn the user.
@@ -33,8 +34,8 @@ export async function findSimilarTransaction(c: Candidate): Promise<SimilarHit[]
       .select('id, amount, occurred_on, merchant, source')
       .eq('family_id', c.familyId)
       .eq('amount', c.amount)
-      .gte('occurred_on', lo.toISOString().slice(0, 10))
-      .lte('occurred_on', hi.toISOString().slice(0, 10))
+      .gte('occurred_on', toLocalISODate(lo))
+      .lte('occurred_on', toLocalISODate(hi))
       .limit(3);
 
     if (c.categoryKey) q = q.eq('category_key', c.categoryKey);

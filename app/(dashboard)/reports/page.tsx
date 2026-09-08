@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatBDT } from '@/lib/utils';
+import { formatBDT, toLocalISODate } from '@/lib/utils';
 import { exportCSV, exportXLSX, exportPDF, type ExportRow } from '@/lib/export';
 import type { Category, FamilyMember } from '@/types/database';
 
@@ -36,8 +36,8 @@ export default function ReportsPage() {
     d.setMonth(d.getMonth() + monthOffset);
     return d;
   }, [monthOffset]);
-  const monthISO = month.toISOString().slice(0, 10);
-  const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 1).toISOString().slice(0, 10);
+  const monthISO = toLocalISODate(month);
+  const monthEnd = toLocalISODate(new Date(month.getFullYear(), month.getMonth() + 1, 1));
   const monthLabel = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   const catLabel = useCallback((k: string) => cats.find((c) => c.key === k)?.label ?? k, [cats]);

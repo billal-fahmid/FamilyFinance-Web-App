@@ -7,7 +7,6 @@ import { Plus, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { budgetSchema, type BudgetInput } from '@/lib/validations/budget';
-import { monthStartISO } from '@/lib/finance';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +22,9 @@ interface Props {
   defaultMonth: string;
 }
 
+// A one-click starting point for the most common monthly household costs.
+const COMMON_MONTHLY_KEYS = ['rent', 'grocery', 'electricity', 'gas', 'water', 'internet', 'mobile'];
+
 export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, defaultMonth }: Props) {
   const { currentFamily } = useFamily();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -34,6 +36,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors },
   } = useForm<BudgetInput>({
     resolver: zodResolver(budgetSchema),
@@ -41,6 +44,17 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'categories' });
+
+  const addCommonCategories = () => {
+    const current = getValues('categories') ?? [];
+    const existingKeys = new Set(current.map((c) => c.categoryKey).filter(Boolean));
+    const toAdd = COMMON_MONTHLY_KEYS.filter(
+      (key) => categories.some((c) => c.key === key) && !existingKeys.has(key)
+    );
+    if (toAdd.length === 0) return;
+    if (current.length === 1 && !current[0].categoryKey) remove(0);
+    toAdd.forEach((key) => append({ categoryKey: key, limitAmount: 0 }));
+  };
 
   useEffect(() => {
     if (!open || !currentFamily) return;
@@ -54,7 +68,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
     reset(
       editing
         ? {
-            month: editing.month,
+            month: editing.month.slice(0, 7),
             totalLimit: editing.total_limit ?? undefined,
             notes: editing.notes ?? '',
             categories: (editing.budget_categories ?? []).map((bc) => ({
@@ -62,7 +76,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
               limitAmount: bc.limit_amount,
             })),
           }
-        : { month: defaultMonth, categories: [{ categoryKey: '', limitAmount: 0 }] }
+        : { month: defaultMonth.slice(0, 7), categories: [{ categoryKey: '', limitAmount: 0 }] }
     );
   }, [open, currentFamily, editing, defaultMonth, reset]);
 
@@ -72,7 +86,8 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
     setIsSubmitting(true);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const month = monthStartISO(new Date(data.month + 'T00:00:00'));
+    // data.month comes from a native <input type="month"> as "YYYY-MM"
+    const month = `${data.month}-01`;
 
     // upsert the budget for this family+month
     const { data: budget, error } = await supabase
@@ -124,7 +139,7 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="month">Month</Label>
-              <Input id="month" type="date" {...register('month')} />
+              <Input id="month" type="month" {...register('month')} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="totalLimit">Overall limit (৳)</Label>
@@ -135,10 +150,18 @@ export function BudgetFormDialog({ open, onOpenChange, onSaved, editing, default
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Category budgets</Label>
-              <Button type="button" variant="outline" size="sm" onClick={() => append({ categoryKey: '', limitAmount: 0 })}>
-                <Plus className="mr-1 h-3.5 w-3.5" /> Add
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={addCommonCategories}>
+                  Common monthly costs
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ categoryKey: '', limitAmount: 0 })}>
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Add
+                </Button>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              &quot;Common monthly costs&quot; fills in Rent, Grocery, Electricity, Gas, Water, Internet and Mobile — just set the limits.
+            </p>
             {fields.map((field, i) => (
               <div key={field.id} className="flex gap-2">
                 <Controller

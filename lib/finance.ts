@@ -1,4 +1,5 @@
 import type { CreditCard, CreditCardTxnType, StatementStatus, RecurringFrequency } from '@/types/database';
+import { toLocalISODate } from '@/lib/utils';
 
 /** Credit utilization = outstanding / limit * 100 (clamped at 0). */
 export function utilization(card: Pick<CreditCard, 'credit_limit' | 'current_outstanding'>): number {
@@ -32,7 +33,7 @@ export function advanceDate(iso: string, freq: RecurringFrequency): string {
     case 'quarterly': d.setMonth(d.getMonth() + 3); break;
     case 'yearly': d.setFullYear(d.getFullYear() + 1); break;
   }
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(d);
 }
 
 export function daysUntil(iso: string): number {
@@ -77,7 +78,7 @@ export function statementStatusTone(s: StatementStatus): 'ok' | 'warn' | 'danger
 
 /** First day of the current month as an ISO date string. */
 export function monthStartISO(d = new Date()): string {
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  return toLocalISODate(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
 /** Whole months from today until an ISO date (min 1). */

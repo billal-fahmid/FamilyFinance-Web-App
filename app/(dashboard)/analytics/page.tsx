@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { formatBDT } from '@/lib/utils';
+import { formatBDT, toLocalISODate } from '@/lib/utils';
 import { monthStartISO, utilization } from '@/lib/finance';
 import { CHART_PALETTE as PALETTE, BRAND } from '@/lib/chart-colors';
 import type { Category, CreditCard, FamilyMember, NetWorthSnapshot, SavingsGoal } from '@/types/database';
@@ -47,9 +47,9 @@ export default function AnalyticsPage() {
     const start = new Date();
     start.setMonth(start.getMonth() - 5);
     start.setDate(1);
-    const startISO = start.toISOString().slice(0, 10);
+    const startISO = toLocalISODate(start);
     const mStart = monthStartISO();
-    const mEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10);
+    const mEnd = toLocalISODate(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1));
 
     const [inc, exp, contrib, catRows, catList, memExp, memList, ccTxn, ccList, nws, loanPay, budget, spend, goalList] =
       await Promise.all([

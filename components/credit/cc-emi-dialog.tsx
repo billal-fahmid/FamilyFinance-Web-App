@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { creditCardEmiSchema, type CreditCardEmiInput } from '@/lib/validations/credit';
-import { todayISO, formatBDT } from '@/lib/utils';
+import { todayISO, formatBDT, toLocalISODate } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +69,7 @@ export function CcEmiDialog({ open, onOpenChange, onSaved, cardId }: Props) {
         monthly_installment: data.monthlyInstallment || suggestedMonthly,
         interest_rate: data.interestRate,
         start_date: data.startDate,
-        end_date: endDate.toISOString().slice(0, 10),
+        end_date: toLocalISODate(endDate),
         notes: data.notes || null,
       })
       .select()

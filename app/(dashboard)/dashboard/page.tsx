@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Lightbulb } from 'lucide-react';
 import { StatTile } from '@/components/ui/stat-tile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatBDT, cn } from '@/lib/utils';
+import { formatBDT, cn, toLocalISODate } from '@/lib/utils';
 import { daysUntil, monthStartISO as currentMonthStart } from '@/lib/finance';
 import { buildInsights, type Insight } from '@/lib/insights';
 
@@ -48,12 +48,12 @@ export default function DashboardPage() {
 
       const monthStart = new Date();
       monthStart.setDate(1);
-      const monthStartISO = monthStart.toISOString().slice(0, 10);
+      const monthStartISO = toLocalISODate(monthStart);
 
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
       sixMonthsAgo.setDate(1);
-      const sixMonthsAgoISO = sixMonthsAgo.toISOString().slice(0, 10);
+      const sixMonthsAgoISO = toLocalISODate(sixMonthsAgo);
 
       const [incomeThisMonth, expensesThisMonth, accounts, incomeHistory, expenseHistory, catRows, catList] =
         await Promise.all([
@@ -147,11 +147,11 @@ export default function DashboardPage() {
       const mStart = currentMonthStart();
       const nextMonth = new Date(mStart + 'T00:00:00');
       nextMonth.setMonth(nextMonth.getMonth() + 1);
-      const nextMonthISO = nextMonth.toISOString().slice(0, 10);
+      const nextMonthISO = toLocalISODate(nextMonth);
 
       const prevMonthStart = new Date(mStart + 'T00:00:00');
       prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
-      const prevMonthStartISO = prevMonthStart.toISOString().slice(0, 10);
+      const prevMonthStartISO = toLocalISODate(prevMonthStart);
 
       const [cards, ccStmts, activeBills, loansRes, budgetRes, budgetSpendRes, prevSpend, prevIncome, nwSnaps] =
         await Promise.all([

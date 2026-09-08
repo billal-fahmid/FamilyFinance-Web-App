@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { expenseSchema, type ExpenseInput } from '@/lib/validations/finance';
-import { todayISO } from '@/lib/utils';
+import { todayISO, newId } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel,
 } from '@/components/ui/select';
+import { ReceiptManager } from '@/components/receipts/receipt-manager';
 import type { Account, Category, FamilyMember, ExpenseEntry, FamilyEvent } from '@/types/database';
 
 const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -33,6 +34,9 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
   const [events, setEvents] = useState<FamilyEvent[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  // A client-generated id so a receipt can be attached to a new expense
+  // before it's saved — the insert below reuses this same id.
+  const [draftId, setDraftId] = useState('');
 
   const {
     control,
@@ -55,6 +59,7 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
 
   useEffect(() => {
     if (!open || !currentFamily) return;
+    setDraftId(editing ? editing.id : newId());
     const supabase = createClient();
 
     supabase.from('accounts').select('*').eq('family_id', currentFamily.id).eq('is_archived', false)
@@ -108,7 +113,7 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
 
     const { error } = editing
       ? await supabase.from('expenses').update(payload).eq('id', editing.id)
-      : await supabase.from('expenses').insert({ ...payload, created_by: user!.id });
+      : await supabase.from('expenses').insert({ ...payload, id: draftId, created_by: user!.id });
 
     setIsSubmitting(false);
     if (error) {
@@ -248,6 +253,13 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
             <Label htmlFor="notes">Notes</Label>
             <Input id="notes" {...register('notes')} />
           </div>
+
+          {draftId && (
+            <div className="space-y-2">
+              <Label>Receipt / Voucher</Label>
+              <ReceiptManager entityType="expense" entityId={draftId} compact />
+            </div>
+          )}
 
           {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 

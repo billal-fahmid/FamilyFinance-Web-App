@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
@@ -13,7 +13,8 @@ import { TransactionList, type ListRow } from '@/components/transaction-list';
 import { IncomeFormDialog } from '@/components/income/income-form-dialog';
 import { ExpenseFormDialog } from '@/components/expense/expense-form-dialog';
 import { exportCSV, exportXLSX, exportPDF, type ExportRow } from '@/lib/export';
-import { formatDate } from '@/lib/utils';
+import { toLocalISODate } from '@/lib/utils';
+import { monthStartISO } from '@/lib/finance';
 import type { Category, IncomeEntry, ExpenseEntry } from '@/types/database';
 
 export default function TransactionsPage() {
@@ -26,21 +27,43 @@ export default function TransactionsPage() {
   const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(null);
   const [loadError, setLoadError] = useState<'needs-migration' | 'load-failed' | null>(null);
+  const [monthOffset, setMonthOffset] = useState(0);
+
+  const month = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + monthOffset);
+    return monthStartISO(d);
+  }, [monthOffset]);
+
+  const monthLabel = useMemo(
+    () => new Date(month + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+    [month]
+  );
 
   const load = useCallback(async () => {
     if (!currentFamily) return;
     setLoadError(null);
     const supabase = createClient();
+
+    const nextMonth = new Date(month + 'T00:00:00');
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextMonthISO = toLocalISODate(nextMonth);
+
     let [income, expenses] = await Promise.all([
-      supabase.from('income').select('*').eq('family_id', currentFamily.id).is('deleted_at', null).order('occurred_on', { ascending: false }),
-      supabase.from('expenses').select('*').eq('family_id', currentFamily.id).is('deleted_at', null).order('occurred_on', { ascending: false }),
+      supabase.from('income').select('*').eq('family_id', currentFamily.id).is('deleted_at', null)
+        .gte('occurred_on', month).lt('occurred_on', nextMonthISO).order('occurred_on', { ascending: false }),
+      supabase.from('expenses').select('*').eq('family_id', currentFamily.id).is('deleted_at', null)
+        .gte('occurred_on', month).lt('occurred_on', nextMonthISO).order('occurred_on', { ascending: false }),
     ]);
     // Older DB without the Milestone 4 `deleted_at` column — retry without the filter.
     if (income.error?.code === '42703' || expenses.error?.code === '42703') {
       setLoadError('needs-migration');
       [income, expenses] = await Promise.all([
-        supabase.from('income').select('*').eq('family_id', currentFamily.id).order('occurred_on', { ascending: false }),
-        supabase.from('expenses').select('*').eq('family_id', currentFamily.id).order('occurred_on', { ascending: false }),
+        supabase.from('income').select('*').eq('family_id', currentFamily.id)
+          .gte('occurred_on', month).lt('occurred_on', nextMonthISO).order('occurred_on', { ascending: false }),
+        supabase.from('expenses').select('*').eq('family_id', currentFamily.id)
+          .gte('occurred_on', month).lt('occurred_on', nextMonthISO).order('occurred_on', { ascending: false }),
       ]);
     } else if (income.error || expenses.error) {
       setLoadError('load-failed');
@@ -49,7 +72,7 @@ export default function TransactionsPage() {
     setIncomeRows((income.data as IncomeEntry[]) ?? []);
     setExpenseRows((expenses.data as ExpenseEntry[]) ?? []);
     setCategories((cats as Category[]) ?? []);
-  }, [currentFamily]);
+  }, [currentFamily, month]);
 
   useEffect(() => {
     load();
@@ -110,7 +133,7 @@ export default function TransactionsPage() {
 
   const doExport = (which: 'expenses' | 'income', fmt: 'csv' | 'xlsx' | 'pdf') => {
     const { cols, rows } = exportData(which);
-    const name = `${which}-${formatDate(new Date()).replace(/ /g, '-')}`;
+    const name = `${which}-${monthLabel.replace(/ /g, '-')}`;
     if (fmt === 'csv') exportCSV(name, cols, rows);
     else if (fmt === 'xlsx') exportXLSX(name, [{ name: which, columns: cols, rows }]);
     else exportPDF(name, which === 'expenses' ? 'Expenses' : 'Income', [{ columns: cols, rows }]);
@@ -118,8 +141,16 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Transactions</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-semibold">Transactions</h1>
+          <p className="text-sm text-muted-foreground">{monthLabel}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset((o) => o - 1)}>←</Button>
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset(0)} disabled={monthOffset === 0}>This month</Button>
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset((o) => o + 1)}>→</Button>
+        </div>
       </div>
 
       {loadError === 'needs-migration' && (

@@ -12,12 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel,
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { ReceiptManager } from '@/components/receipts/receipt-manager';
+import { CategoryCombobox } from '@/components/category-combobox';
 import type { Account, Category, FamilyMember, ExpenseEntry, FamilyEvent } from '@/types/database';
-
-const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 interface Props {
   open: boolean;
@@ -48,14 +47,6 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
     resolver: zodResolver(expenseSchema),
     defaultValues: { occurredOn: todayISO(), scope: 'family' },
   });
-
-  // Expense categories are all leaf rows (each has a parent_key group). Show
-  // them flat but visually grouped by their parent; store the leaf key.
-  const groups = categories.reduce<Record<string, Category[]>>((acc, c) => {
-    const g = c.parent_key || 'other';
-    (acc[g] ??= []).push(c);
-    return acc;
-  }, {});
 
   useEffect(() => {
     if (!open || !currentFamily) return;
@@ -151,19 +142,15 @@ export function ExpenseFormDialog({ open, onOpenChange, onSaved, editing }: Prop
               control={control}
               name="categoryKey"
               render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(groups).map(([group, items]) => (
-                      <SelectGroup key={group}>
-                        <SelectLabel>{titleCase(group)}</SelectLabel>
-                        {items.map((c) => (
-                          <SelectItem key={c.id} value={c.key}>{c.label}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategoryCombobox
+                  categories={categories}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onCategoryCreated={(c) => setCategories((prev) => [...prev, c])}
+                  familyId={currentFamily?.id ?? ''}
+                  type="expense"
+                  placeholder="Select or type a category"
+                />
               )}
             />
             {errors.categoryKey && <p className="text-sm text-destructive">{errors.categoryKey.message}</p>}

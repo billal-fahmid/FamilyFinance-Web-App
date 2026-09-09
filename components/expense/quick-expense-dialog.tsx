@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { CategoryCombobox } from '@/components/category-combobox';
 import type { Account, Category } from '@/types/database';
 
 interface Props {
@@ -127,18 +128,15 @@ export function QuickExpenseDialog({ open, onOpenChange, onSaved }: Props) {
               control={control}
               name="categoryKey"
               render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.key}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategoryCombobox
+                  categories={categories}
+                  value={field.value}
+                  onChange={field.onChange}
+                  onCategoryCreated={(c) => setCategories((prev) => [...prev, c])}
+                  familyId={currentFamily?.id ?? ''}
+                  type="expense"
+                  placeholder="Select or type a category"
+                />
               )}
             />
             {errors.categoryKey && <p className="text-sm text-destructive">{errors.categoryKey.message}</p>}

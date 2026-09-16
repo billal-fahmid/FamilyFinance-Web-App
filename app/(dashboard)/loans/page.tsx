@@ -197,9 +197,13 @@ export default function LoansPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {!l.is_closed && (
-                          <Button size="sm" onClick={() => { setPaying(l); setPayOpen(true); }}>Pay</Button>
-                        )}
+                        <Button
+                          size="sm"
+                          disabled={l.is_closed}
+                          onClick={() => { setPaying(l); setPayOpen(true); }}
+                        >
+                          {l.is_closed ? 'Paid' : 'Pay'}
+                        </Button>
                         <button onClick={() => { setEditing(l); setFormOpen(true); }} className="text-muted-foreground hover:text-foreground">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>

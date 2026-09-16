@@ -3,16 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Landmark, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { loanSchema, type LoanInput, LOAN_TYPES } from '@/lib/validations/loans';
-import { todayISO } from '@/lib/utils';
+import { todayISO, cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import type { Loan } from '@/types/database';
+
+// The `type` enum captures loan *purpose* (personal/home/car/other) except
+// for 'family', which we use as the *source* bucket for anything borrowed
+// from a person rather than an institution — no schema change needed.
+const BANK_TYPES = LOAN_TYPES.filter((t) => t.key !== 'family');
 
 interface Props {
   open: boolean;
@@ -25,12 +31,14 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
   const { currentFamily } = useFamily();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [source, setSource] = useState<'bank' | 'person'>('bank');
 
   const {
     control,
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<LoanInput>({
     resolver: zodResolver(loanSchema),
@@ -39,6 +47,7 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
 
   useEffect(() => {
     if (!open) return;
+    setSource(editing?.type === 'family' ? 'person' : 'bank');
     reset(
       editing
         ? {
@@ -56,6 +65,11 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
         : { type: 'personal', interestRate: 0, emiAmount: 0, startDate: todayISO() }
     );
   }, [open, editing, reset]);
+
+  const chooseSource = (next: 'bank' | 'person') => {
+    setSource(next);
+    setValue('type', next === 'person' ? 'family' : 'personal');
+  };
 
   const onSubmit = async (data: LoanInput) => {
     if (!currentFamily) return;
@@ -98,30 +112,64 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Controller
-                control={control}
-                name="type"
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {LOAN_TYPES.map((t) => (
-                        <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <div className="space-y-2">
+            <Label>Borrowed from</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => chooseSource('bank')}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
+                  source === 'bank' ? 'border-primary bg-primary/10 text-primary' : 'border-input hover:bg-accent'
                 )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lender">Lender</Label>
-              <Input id="lender" placeholder="BRAC Bank, cousin…" {...register('lender')} />
-              {errors.lender && <p className="text-sm text-destructive">{errors.lender.message}</p>}
+              >
+                <Landmark className="h-4 w-4" /> Bank / Card
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseSource('person')}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
+                  source === 'person' ? 'border-primary bg-primary/10 text-primary' : 'border-input hover:bg-accent'
+                )}
+              >
+                <Users className="h-4 w-4" /> Person
+              </button>
             </div>
           </div>
+
+          {source === 'bank' ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {BANK_TYPES.map((t) => (
+                          <SelectItem key={t.key} value={t.key}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lender">Bank / Card name</Label>
+                <Input id="lender" placeholder="e.g. BRAC Bank, City Bank Visa" {...register('lender')} />
+                {errors.lender && <p className="text-sm text-destructive">{errors.lender.message}</p>}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="lender">Person&apos;s name</Label>
+              <Input id="lender" placeholder="e.g. Cousin Rafiq, colleague Hasan" {...register('lender')} />
+              {errors.lender && <p className="text-sm text-destructive">{errors.lender.message}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

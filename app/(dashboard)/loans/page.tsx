@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Landmark, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Button } from '@/components/ui/button';
@@ -103,10 +103,15 @@ export default function LoansPage() {
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-medium">
+                        <p className="flex items-center gap-1.5 font-medium">
+                          {l.type === 'family' ? (
+                            <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          ) : (
+                            <Landmark className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          )}
                           {l.lender}
-                          <span className="ml-2 text-xs text-muted-foreground">{TYPE_LABEL[l.type]}</span>
-                          {l.is_closed && <span className="ml-2 rounded bg-income/15 px-1.5 py-0.5 text-xs text-income">Closed</span>}
+                          <span className="text-xs text-muted-foreground">{TYPE_LABEL[l.type]}</span>
+                          {l.is_closed && <span className="rounded bg-income/15 px-1.5 py-0.5 text-xs text-income">Closed</span>}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(l.start_date)}{l.end_date ? ` – ${formatDate(l.end_date)}` : ''}

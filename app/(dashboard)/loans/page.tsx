@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Pencil, Trash2, Landmark, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pencil, Trash2, Landmark, Users, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoanFormDialog } from '@/components/loans/loan-form-dialog';
 import { LoanPaymentDialog } from '@/components/loans/loan-payment-dialog';
-import { formatBDT, formatDate } from '@/lib/utils';
+import { formatBDT, formatDate, cn } from '@/lib/utils';
+import { monthStartISO } from '@/lib/finance';
 import { LOAN_TYPES } from '@/lib/validations/loans';
 import type { Loan, LoanPayment } from '@/types/database';
 
@@ -27,6 +28,25 @@ export default function LoansPage() {
   const [payOpen, setPayOpen] = useState(false);
   const [paying, setPaying] = useState<Loan | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [monthOffset, setMonthOffset] = useState(0);
+
+  const month = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + monthOffset);
+    return monthStartISO(d);
+  }, [monthOffset]);
+
+  const monthLabel = useMemo(
+    () => new Date(month + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+    [month]
+  );
+
+  const nextMonth = useMemo(() => {
+    const d = new Date(month + 'T00:00:00');
+    d.setMonth(d.getMonth() + 1);
+    return monthStartISO(d);
+  }, [month]);
 
   const load = useCallback(async () => {
     if (!currentFamily) return;
@@ -68,6 +88,16 @@ export default function LoansPage() {
   const totalPrincipal = activeLoans.reduce((s, l) => s + Number(l.principal), 0);
   const totalEmi = activeLoans.reduce((s, l) => s + Number(l.emi_amount), 0);
 
+  // Payments that landed within the selected month, per loan — drives the
+  // monthly EMI-tracking checklist below without a separate fetch.
+  const inMonth = (iso: string) => iso >= month && iso < nextMonth;
+  const monthlyPaidByLoan: Record<string, number> = {};
+  Object.entries(payments).forEach(([loanId, list]) => {
+    monthlyPaidByLoan[loanId] = list.filter((p) => inMonth(p.paid_on)).reduce((s, p) => s + Number(p.amount), 0);
+  });
+  const totalPaidThisMonth = Object.values(monthlyPaidByLoan).reduce((s, v) => s + v, 0);
+  const isCurrentOrPastMonth = monthOffset <= 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -93,6 +123,15 @@ export default function LoansPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{monthLabel}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset((o) => o - 1)}>←</Button>
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset(0)} disabled={monthOffset === 0}>This month</Button>
+          <Button variant="outline" size="sm" onClick={() => setMonthOffset((o) => o + 1)}>→</Button>
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : loans.length === 0 ? (
@@ -101,19 +140,21 @@ export default function LoansPage() {
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             <StatTile label="Total Outstanding" value={formatBDT(totalOutstanding)} tone="expense" />
             <StatTile label="Total Borrowed" value={formatBDT(totalPrincipal)} />
             <StatTile label="Monthly EMI" value={formatBDT(totalEmi)} />
-            <StatTile label="Repaid" value={formatBDT(Math.max(totalPrincipal - totalOutstanding, 0))} tone="income" />
+            <StatTile label={`Paid — ${monthLabel}`} value={formatBDT(totalPaidThisMonth)} tone="income" />
+            <StatTile label="Repaid (all time)" value={formatBDT(Math.max(totalPrincipal - totalOutstanding, 0))} tone="income" />
           </div>
 
           <div className="space-y-3">
             {loans.map((l) => {
               const repaidPct = l.principal > 0 ? ((l.principal - l.outstanding_balance) / l.principal) * 100 : 0;
               const list = payments[l.id] ?? [];
+              const monthPaid = monthlyPaidByLoan[l.id] ?? 0;
               return (
-                <Card key={l.id}>
+                <Card key={l.id} className={cn(l.is_closed && 'border-income/40')}>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div>
@@ -125,13 +166,35 @@ export default function LoansPage() {
                           )}
                           {l.lender}
                           <span className="text-xs text-muted-foreground">{TYPE_LABEL[l.type]}</span>
-                          {l.is_closed && <span className="rounded bg-income/15 px-1.5 py-0.5 text-xs text-income">Closed</span>}
+                          {l.is_closed && (
+                            <span className="flex items-center gap-1 rounded bg-income/15 px-1.5 py-0.5 text-xs font-medium text-income">
+                              <CheckCircle2 className="h-3 w-3" /> Paid off
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(l.start_date)}{l.end_date ? ` – ${formatDate(l.end_date)}` : ''}
                           {l.interest_rate ? ` · ${l.interest_rate}%` : ''}
                           {l.emi_amount ? ` · EMI ${formatBDT(l.emi_amount)}` : ''}
                         </p>
+                        {!l.is_closed && (
+                          <p
+                            className={cn(
+                              'mt-1 flex items-center gap-1 text-xs font-medium',
+                              monthPaid > 0 ? 'text-income' : isCurrentOrPastMonth ? 'text-amber-600' : 'text-muted-foreground'
+                            )}
+                          >
+                            {monthPaid > 0 ? (
+                              <>
+                                <CheckCircle2 className="h-3 w-3" /> Paid {formatBDT(monthPaid)} in {monthLabel}
+                              </>
+                            ) : isCurrentOrPastMonth ? (
+                              `No payment recorded in ${monthLabel}`
+                            ) : (
+                              `Nothing paid yet for ${monthLabel}`
+                            )}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {!l.is_closed && (

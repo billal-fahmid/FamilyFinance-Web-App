@@ -41,11 +41,20 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing, initialSo
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<LoanInput>({
     resolver: zodResolver(loanSchema),
     defaultValues: { type: 'personal', interestRate: 0, emiAmount: 0, startDate: todayISO() },
   });
+
+  // Person loans skip the outstanding-balance field — a fresh loan owes the
+  // full principal, so keep it in sync automatically instead of asking for
+  // a number that would just duplicate what's already typed above it.
+  const principalValue = watch('principal');
+  useEffect(() => {
+    if (source === 'person' && !editing) setValue('outstandingBalance', principalValue ?? 0);
+  }, [source, editing, principalValue, setValue]);
 
   useEffect(() => {
     if (!open) return;
@@ -179,33 +188,37 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing, initialSo
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className={cn('grid gap-3', source === 'bank' ? 'grid-cols-2' : 'grid-cols-1')}>
             <div className="space-y-2">
               <Label htmlFor="principal">Principal (৳)</Label>
               <Input id="principal" type="number" step="0.01" {...register('principal')} />
               {errors.principal && <p className="text-sm text-destructive">{errors.principal.message}</p>}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="outstandingBalance">Outstanding balance (৳)</Label>
-              <Input id="outstandingBalance" type="number" step="0.01" {...register('outstandingBalance')} />
-              {errors.outstandingBalance && <p className="text-sm text-destructive">{errors.outstandingBalance.message}</p>}
-            </div>
+            {source === 'bank' && (
+              <div className="space-y-2">
+                <Label htmlFor="outstandingBalance">Outstanding balance (৳)</Label>
+                <Input id="outstandingBalance" type="number" step="0.01" {...register('outstandingBalance')} />
+                {errors.outstandingBalance && <p className="text-sm text-destructive">{errors.outstandingBalance.message}</p>}
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="interestRate">Interest %</Label>
-              <Input id="interestRate" type="number" step="0.01" {...register('interestRate')} />
+          {source === 'bank' && (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="interestRate">Interest %</Label>
+                <Input id="interestRate" type="number" step="0.01" {...register('interestRate')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emiAmount">EMI (৳)</Label>
+                <Input id="emiAmount" type="number" step="0.01" {...register('emiAmount')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenureMonths">Tenure (months)</Label>
+                <Input id="tenureMonths" type="number" min={1} {...register('tenureMonths')} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="emiAmount">EMI (৳)</Label>
-              <Input id="emiAmount" type="number" step="0.01" {...register('emiAmount')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tenureMonths">Tenure (months)</Label>
-              <Input id="tenureMonths" type="number" min={1} {...register('tenureMonths')} />
-            </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

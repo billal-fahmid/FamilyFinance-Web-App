@@ -41,7 +41,10 @@ node scripts/gen-icons.mjs         # generates the PWA icons (already committed)
    This one file resets `public` and rebuilds the entire schema (Milestones 1–4):
    tables, enums, RLS policies, triggers, the `v_unified_spend` view, audit logging,
    the `receipts` Storage bucket + object policies, and seed categories.
-   It is **safe to re-run** (it wipes app data, not auth users).
+   ⚠️ **This is for first-time setup on an empty project only.** It deletes every
+   family, account and transaction in `public` (not auth users) — never re-run it
+   on a project that already has real data. If something needs updating later,
+   apply the specific file from `supabase/migrations/` instead (see `docs/SETUP.md`).
    Individual migrations live in [`supabase/migrations/`](supabase/migrations) for reference.
 
 3. **Auth redirect URLs** — Supabase → Authentication → URL Configuration:
@@ -171,8 +174,8 @@ lib/
   i18n/              dictionaries
   finance.ts errors.ts export.ts insights.ts duplicate-check.ts utils.ts
 supabase/
-  apply_all.sql      ← run this
-  migrations/        0001…0004 for reference
+  apply_all.sql      ← run once, on a brand-new empty project only (wipes data)
+  migrations/        0001…0006, apply individually to an existing project
   seed_demo.sql      optional demo data
 types/database.ts    hand-written row types
 ```

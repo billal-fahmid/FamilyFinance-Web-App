@@ -124,7 +124,8 @@ export function MemberFormDialog({ open, onOpenChange, onSaved, editing }: Props
       const msg = (error as any)?.message ?? '';
       if (code === '42703' || code === 'PGRST204' || /invite_token/i.test(msg)) {
         return setServerError(
-          'Your database is missing the invitations update. Run supabase/apply_all.sql in the Supabase SQL Editor, then try again.'
+          'Your database is missing the invitations update. Run supabase/migrations/0005_invites.sql in the ' +
+            'Supabase SQL Editor (not apply_all.sql — that wipes all existing data), then try again.'
         );
       }
       return setServerError(friendlyError(error ?? 'Could not create the invite'));

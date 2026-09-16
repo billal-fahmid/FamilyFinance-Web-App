@@ -203,8 +203,9 @@ export default function TransactionsPage() {
 
       {loadError === 'needs-migration' && (
         <div className="rounded-lg border border-amber-500/40 bg-brand-gold/10 p-3 text-sm text-amber-800">
-          Your database is missing the latest update — run <code>supabase/apply_all.sql</code> in the
-          Supabase SQL Editor to enable Trash, and to make deleted items hide correctly.
+          Your database is missing an update — run <code>supabase/migrations/0004_milestone4.sql</code> in
+          the Supabase SQL Editor to enable Trash, and to make deleted items hide correctly.
+          <strong> Do not run apply_all.sql</strong> — it wipes all existing data.
         </div>
       )}
       {loadError === 'load-failed' && (

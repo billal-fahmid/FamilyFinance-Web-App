@@ -87,8 +87,10 @@ select id, name from public.families;
 
 | Symptom | Fix |
 |---|---|
-| `Could not find the table 'public.families'` | `apply_all.sql` hasn't been run yet. |
+| `Could not find the table 'public.families'` | Brand-new project with nothing in it yet — safe to run `apply_all.sql`. |
 | `new row violates row-level security policy` right after migrating | PostgREST cache lag — wait 2 min or reload the schema cache. |
-| `type "family_role" already exists` in SQL Editor | You ran a single migration file twice. Use `apply_all.sql` (it resets first). |
+| `type "family_role" already exists` in SQL Editor | You ran a migration file that was already applied. **Do not run `apply_all.sql` to "fix" this if the project has real data** — it drops and recreates the whole `public` schema, deleting everything. Figure out which migration is missing and run only that one. |
 | `EINVAL … readlink .next/package.json` on `npm run dev` or `next build` | The project sits inside a OneDrive/Dropbox folder, which turns `.next` files into cloud placeholders Node mis-reads as broken symlinks. **Fix: keep the project on plain local disk** (e.g. `C:\Users\<you>\dev\family-finance`). Junctions *inside* the synced folder don't help — the link itself is intercepted. |
-| Category dropdown empty in Add Expense | You're on pre-Milestone-3 schema — run `apply_all.sql`. |
+| Category dropdown empty in Add Expense | You're missing Milestone 3 — run `supabase/migrations/0003_milestone3.sql` specifically, **not** `apply_all.sql`, if the project already has data. |
+
+> ⚠️ **`apply_all.sql` deletes all existing data.** It's for a brand-new, empty Supabase project only. On a project that already has families/transactions/etc., always apply the specific incremental file from `supabase/migrations/` instead — never re-run `apply_all.sql` to fix a schema-drift or "missing column" issue.

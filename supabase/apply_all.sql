@@ -1,8 +1,40 @@
--- ==== FamFinance full schema — safe to run repeatedly ====
--- Resets the `public` schema, then rebuilds everything from scratch. This
--- wipes all app data (families, accounts, transactions, cards, budgets, …)
--- but NOT auth users. Run the whole file in the Supabase SQL Editor.
 -- ============================================================================
+-- ⚠️⚠️⚠️  DANGER: THIS SCRIPT DELETES ALL DATA  ⚠️⚠️⚠️
+-- ============================================================================
+-- This is a first-time-setup script for a BRAND-NEW, EMPTY Supabase project
+-- ONLY. It drops and rebuilds the entire `public` schema from scratch —
+-- every family, account, transaction, card, budget, loan, receipt: GONE,
+-- with no way to get it back afterward (unless you have Supabase backups
+-- enabled, which the Free plan does not include).
+--
+-- If your project already has real data in it and something looks broken
+-- or out of date, do NOT run this file. Instead, apply only the specific
+-- incremental file from supabase/migrations/ that adds what's missing —
+-- see docs/SETUP.md's Troubleshooting table and docs/DEPLOYMENT.md.
+--
+-- The guard below will refuse to run this script if it detects existing
+-- family data, as a safety net — do not remove it "to fix an error" without
+-- being certain you want to erase everything.
+-- ============================================================================
+do $$
+declare
+  has_data boolean := false;
+begin
+  -- to_regclass returns null (not an error) if public.families doesn't exist yet,
+  -- so this stays safe on a genuinely fresh project — the dynamic EXECUTE is only
+  -- ever parsed/run once we already know the table is there.
+  if to_regclass('public.families') is not null then
+    execute 'select exists (select 1 from public.families limit 1)' into has_data;
+  end if;
+
+  if has_data then
+    raise exception
+      'apply_all.sql refused to run: public.families already has data. This script WIPES the entire '
+      'public schema with no undo. If you are certain you want a full reset, delete this guard block '
+      '(the "do $$ ... end $$;" above) and re-run. Otherwise, apply the specific file from '
+      'supabase/migrations/ that adds what you actually need instead.';
+  end if;
+end $$;
 
 -- The auth-user trigger lives in the auth schema, so drop it explicitly
 -- before wiping public (its function is about to disappear).

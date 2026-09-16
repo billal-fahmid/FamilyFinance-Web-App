@@ -9,9 +9,12 @@ import { friendlyError } from '@/lib/errors';
 
 type Prefs = {
   cc_due: boolean; cc_overdue: boolean; bills: boolean; loans: boolean;
-  budget: boolean; savings: boolean; browser: boolean;
+  budget: boolean; savings: boolean; browser: boolean; weekly_report: boolean;
 };
-const DEFAULT: Prefs = { cc_due: true, cc_overdue: true, bills: true, loans: true, budget: true, savings: true, browser: false };
+const DEFAULT: Prefs = {
+  cc_due: true, cc_overdue: true, bills: true, loans: true, budget: true, savings: true,
+  browser: false, weekly_report: true,
+};
 
 const ROWS: { key: keyof Prefs; label: string; hint: string }[] = [
   { key: 'cc_due', label: 'Credit-card payment due', hint: 'When a statement due date is within 5 days' },
@@ -87,6 +90,29 @@ export default function NotificationSettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-foreground">Weekly email summary</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            A weekly email with your family's income, expenses and top spending categories for the past 7 days.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md px-2 py-2.5 hover:bg-accent/40">
+            <span>
+              <span className="block text-sm font-medium">Send me the weekly summary</span>
+              <span className="block text-xs text-muted-foreground">Delivered by email every Monday</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={prefs.weekly_report}
+              onChange={() => toggle('weekly_report')}
+              className="mt-1 h-4 w-4 accent-[hsl(var(--primary))]"
+            />
+          </label>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-foreground">Browser notifications</CardTitle>
           <p className="text-sm text-muted-foreground">
             Get a system notification when reminders appear, on devices that support it.
@@ -97,7 +123,7 @@ export default function NotificationSettingsPage() {
             {prefs.browser ? 'Enabled' : 'Enable browser notifications'}
           </Button>
           <span className="text-xs text-muted-foreground">
-            Email notifications are delivered by Supabase Auth / a scheduled function (see README).
+            Email delivery for the reminders above isn&apos;t wired up yet — only the weekly summary sends email today.
           </span>
         </CardContent>
       </Card>

@@ -79,7 +79,32 @@ $$);
 
 In-app + browser notifications work today (`notifications` table + the
 `generate_financial_notifications` RPC called on load, + the Notification API).
-For **email**:
+
+**Weekly income/expense report (implemented):** `app/api/cron/weekly-report`
+sends every opted-in family member (`profiles.notification_prefs.weekly_report`,
+default on — toggle in Settings → Notifications) a per-family summary of the
+past 7 days' income, expenses and top spending categories, via Resend.
+
+- Requires `RESEND_API_KEY` + `INVITE_FROM_EMAIL` (already used by invites)
+  and `CRON_SECRET` — a long random string (`openssl rand -hex 32`). Without
+  either pair set, the route responds `{ ok: false, reason: 'not_configured' }`
+  and sends nothing.
+- On Vercel: `vercel.json`'s `crons` entry fires it every Monday 08:00 UTC.
+  Vercel automatically sends `Authorization: Bearer $CRON_SECRET` on cron
+  requests once that env var is set — no extra wiring needed. Vercel Cron
+  Jobs need at least a Pro plan for anything other than daily-or-slower
+  schedules; weekly is fine on every plan.
+- On a non-Vercel host: trigger it yourself on a schedule (system cron,
+  GitHub Actions, etc.) with:
+  ```bash
+  curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/cron/weekly-report
+  ```
+- To test manually against a live deploy, the same `curl` command works —
+  the route is idempotent to run more than once (it just resends), so it's
+  safe to call by hand.
+
+**Other in-app notification types** (`cc_due`, `cc_overdue`, `bills`, `loans`,
+`budget`, `savings`) still don't have an email path. To add one:
 
 1. Add a Supabase **Edge Function** `notify-email` that, given a `notifications`
    row, sends via your SMTP/Resend API key (function secret, never in the client).
@@ -87,5 +112,5 @@ For **email**:
    respecting each user's `profiles.notification_prefs`.
 3. Include an unsubscribe link that flips the relevant `notification_prefs` key.
 
-The data model (`notifications`, `notification_prefs`, dedupe keys) is already in
-place; only the delivery function is environment-specific and left unimplemented.
+The data model (`notifications`, `notification_prefs`, dedupe keys) is already
+in place for this; only the delivery function is left unimplemented.

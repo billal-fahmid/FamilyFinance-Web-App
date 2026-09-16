@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   '/api/auth/callback',
   '/api/auth/signup',
   '/api/family/create',
+  '/api/cron/weekly-report', // authenticated via CRON_SECRET header, not a user session
 ];
 
 export async function middleware(request: NextRequest) {

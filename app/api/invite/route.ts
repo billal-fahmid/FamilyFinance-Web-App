@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { escapeHtml, sendEmail } from '@/lib/email';
 
 // Sends a family-invite email.
 //   Body: { email, inviteUrl, familyName, inviterName?, displayName? }
@@ -48,39 +49,21 @@ export async function POST(request: Request) {
       <p style="color:#64748b;font-size:13px">This invitation expires in 14 days. If you weren't expecting it, you can ignore this email.</p>
     </div>`;
 
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: email,
-        subject,
-        html,
-        text: `${inviterName} invited you to ${familyName} on Family Finance.\n\nAccept: ${inviteUrl}\n\nThis invitation expires in 14 days.`,
-      }),
-    });
+  const result = await sendEmail({
+    apiKey,
+    from,
+    to: email,
+    subject,
+    html,
+    text: `${inviterName} invited you to ${familyName} on Family Finance.\n\nAccept: ${inviteUrl}\n\nThis invitation expires in 14 days.`,
+  });
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error('[invite] resend failed', res.status, detail);
-      return NextResponse.json(
-        { ok: false, error: 'Email service rejected the request' },
-        { status: 502 }
-      );
-    }
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error('[invite] send threw', err);
-    return NextResponse.json({ ok: false, error: 'Could not reach email service' }, { status: 502 });
+  if (!result.ok) {
+    console.error('[invite] resend failed', result.status, result.detail);
+    return NextResponse.json(
+      { ok: false, error: result.status === 0 ? 'Could not reach email service' : 'Email service rejected the request' },
+      { status: 502 }
+    );
   }
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string)
-  );
+  return NextResponse.json({ ok: true });
 }

@@ -17,17 +17,9 @@
 -- being certain you want to erase everything.
 -- ============================================================================
 do $$
-declare
-  has_data boolean := false;
 begin
-  -- to_regclass returns null (not an error) if public.families doesn't exist yet,
-  -- so this stays safe on a genuinely fresh project — the dynamic EXECUTE is only
-  -- ever parsed/run once we already know the table is there.
-  if to_regclass('public.families') is not null then
-    execute 'select exists (select 1 from public.families limit 1)' into has_data;
-  end if;
-
-  if has_data then
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'families')
+     and exists (select 1 from public.families limit 1) then
     raise exception
       'apply_all.sql refused to run: public.families already has data. This script WIPES the entire '
       'public schema with no undo. If you are certain you want a full reset, delete this guard block '
@@ -2093,5 +2085,19 @@ alter table public.profiles alter column notification_prefs set default
 update public.profiles
   set notification_prefs = notification_prefs || '{"weekly_report": true}'::jsonb
   where not (notification_prefs ? 'weekly_report');
+
+-- ============================================================================
+-- Configurable report interval — lets each user pick how often they get the
+-- report email (minutes/hours/days/months) instead of a fixed weekly send.
+-- ============================================================================
+alter table public.profiles add column if not exists weekly_report_last_sent_at timestamptz;
+
+alter table public.profiles alter column notification_prefs set default
+  '{"cc_due":true,"cc_overdue":true,"bills":true,"loans":true,"budget":true,"savings":true,"browser":false,
+    "weekly_report":true,"report_interval":{"unit":"days","value":7}}'::jsonb;
+
+update public.profiles
+  set notification_prefs = notification_prefs || '{"report_interval":{"unit":"days","value":7}}'::jsonb
+  where not (notification_prefs ? 'report_interval');
 
 notify pgrst, 'reload schema';

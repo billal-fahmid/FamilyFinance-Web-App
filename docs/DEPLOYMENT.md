@@ -80,28 +80,41 @@ $$);
 In-app + browser notifications work today (`notifications` table + the
 `generate_financial_notifications` RPC called on load, + the Notification API).
 
-**Weekly income/expense report (implemented):** `app/api/cron/weekly-report`
-sends every opted-in family member (`profiles.notification_prefs.weekly_report`,
-default on — toggle in Settings → Notifications) a per-family summary of the
-past 7 days' income, expenses and top spending categories, via Resend.
+**Income/expense report email (implemented):** `app/api/cron/weekly-report`
+sends each opted-in family member (`profiles.notification_prefs.weekly_report`,
+default on — configured in Settings → Notifications) a per-family summary of
+income, expenses and top spending categories, via Resend, **on whatever
+schedule that person picked** — minutes, hours, days, or months.
 
+- Each profile stores `notification_prefs.report_interval = { unit, value }`
+  and `weekly_report_last_sent_at`. The route runs on a tight cron and, each
+  time, only emails members whose `now - last_sent_at >= interval` — i.e. the
+  cron fires often, but any one person's actual send cadence is theirs.
+- `occurred_on` on transactions is a calendar date with no time-of-day, so a
+  minutes/hours interval can only ever show "today's totals so far" — there's
+  no finer resolution in the data to slice by. Day/month intervals show a
+  real date range.
 - Requires `RESEND_API_KEY` + `INVITE_FROM_EMAIL` (already used by invites)
   and `CRON_SECRET` — a long random string (`openssl rand -hex 32`). Without
   either pair set, the route responds `{ ok: false, reason: 'not_configured' }`
   and sends nothing.
-- On Vercel: `vercel.json`'s `crons` entry fires it every Monday 08:00 UTC.
+- On Vercel: `vercel.json`'s `crons` entry fires it every 5 minutes.
   Vercel automatically sends `Authorization: Bearer $CRON_SECRET` on cron
-  requests once that env var is set — no extra wiring needed. Vercel Cron
-  Jobs need at least a Pro plan for anything other than daily-or-slower
-  schedules; weekly is fine on every plan.
-- On a non-Vercel host: trigger it yourself on a schedule (system cron,
-  GitHub Actions, etc.) with:
+  requests once that env var is set — no extra wiring needed.
+  ⚠️ **Vercel Cron Jobs on the Hobby (free) plan can only run once per day**,
+  regardless of what `vercel.json` says — Vercel silently caps it. On Hobby,
+  the finest cadence that will actually arrive on time is daily; anyone who
+  picks minutes/hours/a few days will just get their report once a day
+  instead (still correct content, just less frequent than requested).
+  Every-5-minutes delivery needs a **Pro** plan or higher.
+- On a non-Vercel host: trigger it yourself every 5 minutes (system cron,
+  GitHub Actions on a schedule, etc.) with:
   ```bash
   curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/cron/weekly-report
   ```
 - To test manually against a live deploy, the same `curl` command works —
-  the route is idempotent to run more than once (it just resends), so it's
-  safe to call by hand.
+  each call only sends to whoever is actually due, so it's safe to call by
+  hand as often as you like.
 
 **Other in-app notification types** (`cc_due`, `cc_overdue`, `bills`, `loans`,
 `budget`, `savings`) still don't have an email path. To add one:

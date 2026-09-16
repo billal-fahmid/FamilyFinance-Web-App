@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Landmark, Users } from 'lucide-react';
+import { Pencil, Trash2, Landmark, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFamily } from '@/components/providers/family-provider';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ export default function LoansPage() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Loan | null>(null);
+  const [newLoanSource, setNewLoanSource] = useState<'bank' | 'person'>('bank');
   const [payOpen, setPayOpen] = useState(false);
   const [paying, setPaying] = useState<Loan | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -69,14 +70,27 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold">Loans &amp; Debt</h1>
           <p className="text-sm text-muted-foreground">{activeLoans.length} active</p>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
-          <Plus className="mr-1 h-4 w-4" /> Add Loan
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setEditing(null); setNewLoanSource('bank'); setFormOpen(true); }}
+          >
+            <Landmark className="mr-1 h-4 w-4" /> Loan from Bank/Card
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setEditing(null); setNewLoanSource('person'); setFormOpen(true); }}
+          >
+            <Users className="mr-1 h-4 w-4" /> Loan from Person
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -173,7 +187,13 @@ export default function LoansPage() {
         </>
       )}
 
-      <LoanFormDialog open={formOpen} onOpenChange={setFormOpen} onSaved={load} editing={editing} />
+      <LoanFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onSaved={load}
+        editing={editing}
+        initialSource={newLoanSource}
+      />
       <LoanPaymentDialog open={payOpen} onOpenChange={setPayOpen} onSaved={load} loan={paying} />
     </div>
   );

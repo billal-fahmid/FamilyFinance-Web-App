@@ -25,9 +25,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
   editing?: Loan | null;
+  /** Which mode to start a new loan in — ignored when editing an existing one. */
+  initialSource?: 'bank' | 'person';
 }
 
-export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) {
+export function LoanFormDialog({ open, onOpenChange, onSaved, editing, initialSource = 'bank' }: Props) {
   const { currentFamily } = useFamily();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -47,7 +49,8 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
 
   useEffect(() => {
     if (!open) return;
-    setSource(editing?.type === 'family' ? 'person' : 'bank');
+    const nextSource = editing ? (editing.type === 'family' ? 'person' : 'bank') : initialSource;
+    setSource(nextSource);
     reset(
       editing
         ? {
@@ -62,9 +65,14 @@ export function LoanFormDialog({ open, onOpenChange, onSaved, editing }: Props) 
             outstandingBalance: editing.outstanding_balance,
             notes: editing.notes ?? '',
           }
-        : { type: 'personal', interestRate: 0, emiAmount: 0, startDate: todayISO() }
+        : {
+            type: nextSource === 'person' ? 'family' : 'personal',
+            interestRate: 0,
+            emiAmount: 0,
+            startDate: todayISO(),
+          }
     );
-  }, [open, editing, reset]);
+  }, [open, editing, initialSource, reset]);
 
   const chooseSource = (next: 'bank' | 'person') => {
     setSource(next);
